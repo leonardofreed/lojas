@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Delivery</title>
+</head>
+<body>
+    <h1>Sistema de Delivery</h1>
+    
+    <h2>Adicionar Cliente</h2>
+    <form id="addClientForm">
+        <input type="text" id="nome" placeholder="Nome" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="text" id="telefone" placeholder="Telefone" required>
+        <button type="submit">Adicionar Cliente</button>
+    </form>
+
+    <h2>Lista de Clientes</h2>
+    <ul id="clientList"></ul>
+
+    <h2>Adicionar Produto</h2>
+    <form id="addProductForm">
+        <input type="text" id="nomeProduto" placeholder="Nome do Produto" required>
+        <input type="number" step="0.01" id="precoProduto" placeholder="Preço" required>
+        <textarea id="descricaoProduto" placeholder="Descrição"></textarea>
+        <button type="submit">Adicionar Produto</button>
+    </form>
+
+    <h2>Lista de Produtos</h2>
+    <ul id="productList"></ul>
+
+    <script>
+        function listarClientes() {
+            fetch('db_operations.php?listar=true')
+                .then(response => response.json())
+                .then(data => {
+                    const clientList = document.getElementById('clientList');
+                    clientList.innerHTML = '';
+                    data.forEach(cliente => {
+                        const li = document.createElement('li');
+                        li.textContent = `${cliente.nome} - ${cliente.email} - ${cliente.telefone}`;
+                        clientList.appendChild(li);
+                    });
+                })
+                .catch(error => console.error('Erro ao listar clientes:', error));
+        }
+
+        function listarProdutos() {
+            fetch('db_operations.php?listarProdutos=true')
+                .then(response => response.json())
+                .then(data => {
+                    const productList = document.getElementById('productList');
+                    productList.innerHTML = '';
+                    data.forEach(produto => {
+                        const li = document.createElement('li');
+                        li.textContent = `${produto.nome} - R$${produto.preco} - ${produto.descricao}`;
+                        productList.appendChild(li);
+                    });
+                })
+                .catch(error => console.error('Erro ao listar produtos:', error));
+        }
+
+        document.getElementById('addClientForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const nome = document.getElementById('nome').value;
+            const email = document.getElementById('email').value;
+            const telefone = document.getElementById('telefone').value;
+
+            fetch('db_operations.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `nome=${encodeURIComponent(nome)}&email=${encodeURIComponent(email)}&telefone=${encodeURIComponent(telefone)}`
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log(data);
+                listarClientes(); // Atualiza a lista de clientes após a adição
+            })
+            .catch(error => console.error('Erro:', error));
+        });
+
+        document.getElementById('addProductForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const nomeProduto = document.getElementById('nomeProduto').value;
+            const precoProduto = document.getElementById('precoProduto').value;
+            const descricaoProduto = document.getElementById('descricaoProduto').value;
+
+            fetch('db_operations.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `nomeProduto=${encodeURIComponent(nomeProduto)}&precoProduto=${precoProduto}&descricaoProduto=${encodeURIComponent(descricaoProduto)}&adicionarProduto=true`
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log(data);
+                listarProdutos(); // Atualiza a lista de produtos após a adição
+            })
+            .catch(error => console.error('Erro:', error));
+        });
+
+        // Chama a função para listar clientes e produtos ao carregar a página
+        listarClientes();
+        listarProdutos();
+    </script>
+</body>
+</html>

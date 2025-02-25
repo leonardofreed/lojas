@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Produtos</title>
+</head>
+<body>
+    <h1>Gerenciamento de Produtos</h1>
+    
+    <h2>Adicionar/Editar Produto</h2>
+    <form id="addProductForm">
+        <input type="hidden" id="produtoId">
+        <input type="text" id="nomeProduto" placeholder="Nome do Produto" required>
+        <input type="number" step="0.01" id="precoProduto" placeholder="Preço" required>
+        <textarea id="descricaoProduto" placeholder="Descrição"></textarea>
+        <button type="submit">Adicionar Produto</button>
+    </form>
+
+    <h2>Lista de Produtos</h2>
+    <ul id="productList"></ul>
+    <button onclick="listarProdutos()">Atualizar Lista de Produtos</button>
+
+    <script>
+        function listarProdutos() {
+            fetch('db_operations.php?listarProdutos=true')
+                .then(response => response.json())
+                .then(data => {
+                    const productList = document.getElementById('productList');
+                    productList.innerHTML = '';
+                    data.forEach(produto => {
+                        const li = document.createElement('li');
+                        li.textContent = `${produto.nome} - R$${produto.preco.toFixed(2)} - ${produto.descricao}`;
+
+                        
+                        const editButton = document.createElement('button');
+                        editButton.textContent = 'Editar';
+                        editButton.onclick = () => editarProduto(produto);
+                        li.appendChild(editButton);
+                        
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'Excluir';
+                        deleteButton.onclick = () => excluirProduto(produto.id);
+                        li.appendChild(deleteButton);
+                        
+                        productList.appendChild(li);
+                    });
+                })
+                .catch(error => console.error('Erro ao listar produtos:', error));
+        }
+
+        function editarProduto(produto) {
+            document.getElementById('produtoId').value = produto.id;
+            document.getElementById('nomeProduto').value = produto.nome;
+            document.getElementById('precoProduto').value = produto.preco;
+            document.getElementById('descricaoProduto').value = produto.descricao;
+            document.querySelector('button[type="submit"]').textContent = 'Atualizar Produto';
+        }
+
+        function excluirProduto(id) {
+            fetch('db_operations.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `id=${id}&deletar=true`
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log(data);
+                listarProdutos(); // Atualiza a lista de produtos após a exclusão
+            })
+            .catch(error => console.error('Erro ao excluir produto:', error));
+        }
+
+        document.getElementById('addProductForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const id = document.getElementById('produtoId').value;
+            const nomeProduto = document.getElementById('nomeProduto').value;
+            const precoProduto = document.getElementById('precoProduto').value;
+            const descricaoProduto = document.getElementById('descricaoProduto').value;
+
+            if (id) {
+                // Atualizar produto
+                fetch('db_operations.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `id=${id}&nomeProduto=${encodeURIComponent(nomeProduto)}&precoProduto=${precoProduto}&descricaoProduto=${encodeURIComponent(descricaoProduto)}&atualizar=true`
+                })
+                .then(response => response.text())
+                .then(data => {
+                    console.log(data);
+                    listarProdutos(); // Atualiza a lista de produtos após a atualização
+                })
+                .catch(error => console.error('Erro ao atualizar produto:', error));
+            } else {
+                // Adicionar produto
+                fetch('db_operations.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `nomeProduto=${encodeURIComponent(nomeProduto)}&precoProduto=${precoProduto}&descricaoProduto=${encodeURIComponent(descricaoProduto)}&adicionarProduto=true`
+                })
+                .then(response => response.text())
+                .then(data => {
+                    console.log(data);
+                    listarProdutos(); // Atualiza a lista de produtos após a adição
+                })
+                .catch(error => console.error('Erro:', error));
+            }
+        });
+
+        // Chama a função para listar produtos ao carregar a página
+        listarProdutos();
+        
+        // Adicionando um log para verificar a execução da função
+        console.log("Função listarProdutos chamada ao carregar a página.");
+
+    </script>
+</body>
+</html>
